@@ -52,11 +52,12 @@ pub mod imp {
                             .n_planes(dmabuf.num_planes() as u32)
                             .fourcc(dmabuf.format().code as u32);
 
-                        for (plane_idx, (handle, offset)) in
-                            dmabuf.handles().zip(dmabuf.offsets()).enumerate()
+                        for (plane_idx, ((handle, offset), stride)) in
+                            dmabuf.handles().zip(dmabuf.offsets()).zip(dmabuf.strides()).enumerate()
                         {
                             builder = builder.fd(plane_idx as u32, handle.as_raw_fd());
                             builder = builder.offset(plane_idx as u32, offset);
+                            builder = builder.stride(plane_idx as u32, stride);
                         }
 
                         let dmabuf_texture = unsafe { builder.build() };
