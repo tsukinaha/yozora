@@ -76,7 +76,7 @@ impl TextureBuilder {
         self
     }
 
-    pub unsafe fn build(self) -> Result<Texture, gdk::glib::Error> {
-        unsafe { self.inner.build() }
+    pub unsafe fn build(&self) -> Result<Texture, gdk::glib::Error> {
+        unsafe { self.inner.clone().build() }
     }
 }

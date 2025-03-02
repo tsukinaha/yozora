@@ -45,7 +45,15 @@ fn build_ui(app: &Application) {
         .build();
 
     let widget = widget::SWidget::new();
-    window.set_child(Some(&widget));
+    
+    let toolbar = adw::ToolbarView::new();
+    let headerbar = adw::HeaderBar::new();
+    let title = gtk::Label::new(Some("Test"));
+    headerbar.set_title_widget(Some(&title));
+    toolbar.add_top_bar(&headerbar);
+    toolbar.set_content(Some(&widget));
+
+    window.set_child(Some(&toolbar));
 
     let display = gdk::Display::default()
         .unwrap()

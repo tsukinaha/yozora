@@ -22,12 +22,13 @@ pub mod imp {
     use yozora::{
         Builder,
         DMABUF_IMPORTED,
+        TextureBuilder,
     };
 
     // Object holding the state
     #[derive(Default)]
     pub struct SWidget {
-        pub dmabuf: RefCell<Option<Texture>>,
+        pub dmabuf: RefCell<TextureBuilder>,
     }
 
     #[glib::object_subclass]
@@ -52,17 +53,19 @@ pub mod imp {
                             .n_planes(dmabuf.num_planes() as u32)
                             .fourcc(dmabuf.format().code as u32);
 
-                        for (plane_idx, ((handle, offset), stride)) in
-                            dmabuf.handles().zip(dmabuf.offsets()).zip(dmabuf.strides()).enumerate()
+                        for (plane_idx, ((handle, offset), stride)) in dmabuf
+                            .handles()
+                            .zip(dmabuf.offsets())
+                            .zip(dmabuf.strides())
+                            .enumerate()
                         {
-                            builder = builder.fd(plane_idx as u32, handle.as_raw_fd());
-                            builder = builder.offset(plane_idx as u32, offset);
-                            builder = builder.stride(plane_idx as u32, stride);
+                            builder = builder
+                                .fd(plane_idx as u32, handle.as_raw_fd())
+                                .offset(plane_idx as u32, offset)
+                                .stride(plane_idx as u32, stride);
                         }
 
-                        let dmabuf_texture = unsafe { builder.build() };
-                        println!("Received dmabuf texture result: {:?}", dmabuf_texture);
-                        imp.dmabuf.replace(dmabuf_texture.ok());
+                        imp.dmabuf.replace(builder);
                     }
                 }
             ));
@@ -74,8 +77,11 @@ pub mod imp {
             self.parent_snapshot(snapshot);
             let width = self.obj().width();
             let height = self.obj().height();
-            if let Some(dmabuf) = self.dmabuf.borrow().as_ref() {
+
+            if let Ok(dmabuf) = unsafe { self.dmabuf.borrow().build() } {
+                let start_render_time = std::time::Instant::now();
                 dmabuf.snapshot(snapshot, width as f64, height as f64);
+                println!("Render time: {:?}", start_render_time.elapsed());
             }
         }
     }
